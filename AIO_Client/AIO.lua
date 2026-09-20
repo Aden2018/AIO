@@ -854,7 +854,16 @@ end
 function AIO.AddAddon(path, name)
     if AIO_SERVER then
         if AIO_MAIN_LUA_STATE then
-            path = path or debug.getinfo(2, 'S').source:sub(2)
+            -- debug.getinfo().source starts with '@' only when the chunk was
+            -- loaded from a file. Some Eluna builds set the chunk name to the
+            -- bare path without '@'; stripping unconditionally eats the first
+            -- char of the real path (e.g. "lua_scripts\..." -> "ua_scripts\..."),
+            -- so only strip a leading '@'.
+            local src = debug.getinfo(2, 'S').source
+            if src:sub(1, 1) == "@" then
+                src = src:sub(2)
+            end
+            path = path or src
             name = name or match(path, "([^/]*)$")
             local code = AIO_ReadFile(path)
             AIO.AddAddonCode(name, code)
